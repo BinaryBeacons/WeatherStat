@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Weather Station</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(to bottom right, #b3fffd, #fbed96);
+            color: #222;
+            text-align: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 2vh 0 0 0;
+        }
+        h1 {
+            color: #2294ef;
+        }
+        .instructions {
+            background: #fffbe8;
+            border-radius: 18px;
+            width: 90%;
+            max-width: 410px;
+            margin: 2vh auto 3vh auto;
+            padding: 14px 3vw;
+            box-shadow: 0 0 10px #eeeeef;
+        }
+        .main-cards {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 18px;
+            gap: 32px;
+            flex-wrap: wrap;
+        }
+        .card {
+            background: #fff;
+            border-radius: 15px;
+            width: 42vw;
+            max-width: 170px;
+            min-width: 120px;
+            padding: 16px 0;
+            font-size: 1.2rem;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+            border: 3px solid #b3e6f9;
+            min-height: 110px;
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .alert {
+            background: #ffd6da !important;
+            border: 3px solid #dd4455 !important;
+            color: #981e2c;
+        }
+        .value {
+            font-size: 2rem;
+            margin: 7px 0 0 0;
+            font-weight: bold;
+        }
+        #alert-message {
+            color: #ca2628;
+            font-weight: bold;
+            font-size: 1.06rem;
+            padding: 8px;
+            display: none;
+        }
+        #weather-icon {
+            font-size: 48px;
+            margin: 0 auto 13px auto;
+        }
+        button {
+            background: linear-gradient(90deg, #36d1c4 60%, #2294ef 100%);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.18rem;
+            padding: 9px 28px;
+            margin: 20px 0 32px 0;
+            box-shadow: 0 1px 6px rgba(38,166,154,0.15);
+            cursor: pointer;
+            transition: background 0.21s;
+        }
+        button:hover {
+            background: linear-gradient(90deg, #2294ef 10%, #36d1c4 100%);
+        }
+        .timestamp {
+            margin-top: 12px;
+            font-size: 1.03rem;
+            color: #226668;
+        }
+        .chart-container {
+            max-width: 430px;
+            width: 90vw;
+            background: #fff;
+            border-radius: 18px;
+            padding: 18px 0 10px 0;
+            margin: 0 auto 5vh auto;
+            box-shadow: 0 2px 14px #ebf6f7;
+        }
+        @media (max-width: 600px) {
+            .main-cards {
+                flex-direction: column;
+                align-items: center;
+                gap: 16px;
+            }
+            .card {
+                width: 75vw;
+                min-width: 100px;
+                max-width: 260px;
+                margin-bottom: 14px;
+            }
+            .instructions {
+                width: 98vw;
+                padding: 3vw;
+            }
+            .chart-container {
+                width: 95vw;
+                max-width: 98vw;
+                margin-bottom: 7vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Personal Weather Station</h1>
+    <div class="instructions">
+        <b>Instructions:</b> Click "New Reading" to simulate sensors.<br>
+        The emoji shows actual weather conditions!<br>
+        Out-of-range readings will trigger a warning.<br><br>
+        Comfortable: <b>Temp: ≤ 30°C</b>, <b>Hum: 40–70%</b>
+    </div>
+    <div id="alert-message"></div>
+    <div id="weather-icon">☀️</div>
+    <div class="main-cards">
+        <div id="temperature" class="card">
+            <div>Temperature</div>
+            <div class="value" id="temp-value">-- °C</div>
+        </div>
+        <div id="humidity" class="card">
+            <div>Humidity</div>
+            <div class="value" id="hum-value">-- %</div>
+        </div>
+    </div>
+    <div class="timestamp" id="timestamp">Last updated: --</div>
+    <button onclick="updateReadings()">New Reading</button>
+    <div class="chart-container">
+        <canvas id="historyChart"></canvas>
+    </div>
+    <script>
+        window.onload = function() {
+            const tempHistory = [];
+            const humHistory = [];
+            const timeHistory = [];
+            const maxHistory = 10;
+
+            const ctx = document.getElementById('historyChart').getContext('2d');
+            const chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: timeHistory,
+                    datasets: [
+                        {
+                            label: 'Temperature (°C)',
+                            data: tempHistory,
+                            borderColor: '#2294ef',
+                            backgroundColor: 'rgba(34, 148, 239, 0.10)',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Humidity (%)',
+                            data: humHistory,
+                            borderColor: '#36d1c4',
+                            backgroundColor: 'rgba(54, 209, 196, 0.10)',
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: true } },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            suggestedMax: 100
+                        }
+                    }
+                }
+            });
+
+            function updateChart(temp, hum, time) {
+                tempHistory.push(temp);
+                humHistory.push(hum);
+                timeHistory.push(time);
+                if(tempHistory.length > maxHistory) {
+                    tempHistory.shift();
+                    humHistory.shift();
+                    timeHistory.shift();
+                }
+                chart.update();
+            }
+
+            function getRandom(min, max) {
+                return Math.floor(Math.random() * (max - min + 1)) + min;
+            }
+
+            function setWeatherIcon(temp) {
+                const iconDiv = document.getElementById('weather-icon');
+                if (temp >= 35) {
+                    iconDiv.textContent = "☀️";  // Sunny
+                } else if (temp > 30) {
+                    iconDiv.textContent = "⛈️";  // Thunderstorm
+                } else if (temp >= 20) {
+                    iconDiv.textContent = "⛅";  // Cloudy
+                } else {
+                    iconDiv.textContent = "🌫️";  // Rainy/Fog
+                }
+            }
+
+            function updateReadings() {
+                const temp = getRandom(18, 42);
+                const hum = getRandom(25, 90);
+                const now = new Date().toLocaleTimeString();
+
+                document.getElementById('temp-value').textContent = temp + " °C";
+                document.getElementById('hum-value').textContent = hum + " %";
+                document.getElementById('timestamp').textContent = "Last updated: " + now;
+
+                setWeatherIcon(temp);
+
+                const tempCard = document.getElementById('temperature');
+                const humCard = document.getElementById('humidity');
+                let alertMsg = '', alertShown = false;
+                if(temp > 30) {
+                    tempCard.className = "card alert";
+                    alertMsg += "⚠️ Temperature too high! ";
+                    alertShown = true;
+                } else {
+                    tempCard.className = "card";
+                }
+                if(hum < 40 || hum > 70) {
+                    humCard.className = "card alert";
+                    alertMsg += "⚠️ Humidity out of range!";
+                    alertShown = true;
+                } else {
+                    humCard.className = "card";
+                }
+                const alertBox = document.getElementById('alert-message');
+                alertBox.style.display = alertShown ? "block" : "none";
+                alertBox.textContent = alertMsg;
+
+                updateChart(temp, hum, now);
+            }
+
+            window.updateReadings = updateReadings;
+
+            updateReadings();
+            setInterval(updateReadings, 4000);
+        }
+    </script>
+</body>
+</html>
