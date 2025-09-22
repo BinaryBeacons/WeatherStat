@@ -2,30 +2,69 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Personal Weather Station</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
     <style>
-        body {
+        html, body {
+            margin: 0;
+            padding: 0;
+            max-width: 100vw;
+            overflow-x: hidden;
+            box-sizing: border-box;
             font-family: 'Segoe UI', Arial, sans-serif;
             background: linear-gradient(to bottom right, #b3fffd, #fbed96);
             color: #222;
             text-align: center;
             min-height: 100vh;
-            margin: 0;
-            padding: 2vh 0 0 0;
+            padding-top: 2vh;
         }
         h1 {
+            font-family: 'Orbitron', sans-serif;
             color: #2294ef;
+            margin: 0;
+            padding: 0.7em 0;
+            letter-spacing: 1.5px;
         }
-        .instructions {
+        .info-button {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            background: #2294ef;
+            color: #fff;
+            font-weight: bold;
+            font-size: 1.3rem;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            user-select: none;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: background 0.3s ease;
+        }
+        .info-button:hover {
+            background: #1e7ddb;
+        }
+        .info-overlay {
+            position: fixed;
+            top: 60px;
+            right: 15px;
+            width: 280px;
             background: #fffbe8;
-            border-radius: 18px;
-            width: 90%;
-            max-width: 410px;
-            margin: 2vh auto 3vh auto;
-            padding: 14px 3vw;
-            box-shadow: 0 0 10px #eeeeef;
+            border-radius: 12px;
+            padding: 14px 18px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+            font-size: 0.95rem;
+            color: #222;
+            box-sizing: border-box;
+            z-index: 999;
+            display: none;
+            text-align: left;
         }
         .main-cards {
             display: flex;
@@ -33,6 +72,7 @@
             margin-bottom: 18px;
             gap: 32px;
             flex-wrap: wrap;
+            overflow: hidden;
         }
         .card {
             background: #fff;
@@ -49,6 +89,8 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            box-sizing: border-box;
+            word-wrap: break-word;
         }
         .alert {
             background: #ffd6da !important;
@@ -99,6 +141,7 @@
             padding: 18px 0 10px 0;
             margin: 0 auto 5vh auto;
             box-shadow: 0 2px 14px #ebf6f7;
+            box-sizing: border-box;
         }
         @media (max-width: 600px) {
             .main-cards {
@@ -112,10 +155,6 @@
                 max-width: 260px;
                 margin-bottom: 14px;
             }
-            .instructions {
-                width: 98vw;
-                padding: 3vw;
-            }
             .chart-container {
                 width: 95vw;
                 max-width: 98vw;
@@ -126,12 +165,15 @@
 </head>
 <body>
     <h1>Personal Weather Station</h1>
-    <div class="instructions">
-        <b>Instructions:</b> Click "New Reading" to simulate sensors.<br>
-        The emoji shows actual weather conditions!<br>
-        Out-of-range readings will trigger a warning.<br><br>
-        Comfortable: <b>Temp: ≤ 30°C</b>, <b>Hum: 40–70%</b>
+    <div class="info-button" id="infoButton" title="Instructions">i</div>
+    <div class="info-overlay" id="infoOverlay">
+        <strong>Instructions:</strong>
+        <p>Click the <em>New Reading</em> button to simulate sensor data.</p>
+        <p>The emoji shows actual weather conditions.</p>
+        <p>Alerts will appear if temperature exceeds 30°C or humidity is outside 40-70%.</p>
+        <p>Enjoy monitoring your personal weather station!</p>
     </div>
+
     <div id="alert-message"></div>
     <div id="weather-icon">☀️</div>
     <div class="main-cards">
@@ -149,7 +191,19 @@
     <div class="chart-container">
         <canvas id="historyChart"></canvas>
     </div>
+
     <script>
+        // Toggle info overlay visibility
+        const infoButton = document.getElementById('infoButton');
+        const infoOverlay = document.getElementById('infoOverlay');
+        infoButton.addEventListener('click', () => {
+            if (infoOverlay.style.display === 'block') {
+                infoOverlay.style.display = 'none';
+            } else {
+                infoOverlay.style.display = 'block';
+            }
+        });
+
         window.onload = function() {
             const tempHistory = [];
             const humHistory = [];
@@ -209,13 +263,13 @@
             function setWeatherIcon(temp) {
                 const iconDiv = document.getElementById('weather-icon');
                 if (temp >= 35) {
-                    iconDiv.textContent = "☀️";  // Sunny
+                    iconDiv.textContent = "☀️";
                 } else if (temp > 30) {
-                    iconDiv.textContent = "⛈️";  // Thunderstorm
+                    iconDiv.textContent = "⛈️";
                 } else if (temp >= 20) {
-                    iconDiv.textContent = "⛅";  // Cloudy
+                    iconDiv.textContent = "⛅";
                 } else {
-                    iconDiv.textContent = "🌫️";  // Rainy/Fog
+                    iconDiv.textContent = "🌫️";
                 }
             }
 
@@ -262,3 +316,7 @@
     </script>
 </body>
 </html>
+
+
+
+
